@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Background</title>
+    <style>
+        body { font-family: system-ui, sans-serif; margin: 0; padding: 8px 12px; font-size: 12px; color: #666; background: #f5f5f5; }
+    </style>
+</head>
+<body>
+    <span id="status">Loading…</span>
+    <audio id="bgAudio" loop style="display:none"></audio>
+    <div id="ytContainer"></div>
+    <script>
+        (function() {
+            var audio = document.getElementById('bgAudio');
+            audio.volume = 0.3;
+            var ytPlayer = null;
+            var statusEl = document.getElementById('status');
+
+            function stopAndClose() {
+                try {
+                    if (ytPlayer && ytPlayer.stopVideo) ytPlayer.stopVideo();
+                } catch (e) {}
+                audio.pause();
+                audio.removeAttribute('src');
+                var c = document.getElementById('ytContainer');
+                if (c) c.innerHTML = '';
+                statusEl.textContent = 'Stopped';
+                window.close();
+            }
+
+            function play() {
+                var playing = localStorage.getItem('backgroundPlaying');
+                var url = localStorage.getItem('backgroundUrl');
+                var ytId = localStorage.getItem('backgroundYoutubeId');
+                if (playing !== '1') { stopAndClose(); return; }
+                if (ytId) {
+                    statusEl.textContent = 'Playing (YouTube)';
+                    var container = document.getElementById('ytContainer');
+                    container.innerHTML = '<div id="ytEl"></div>';
+                    function initYt() {
+                        if (!window.YT || !window.YT.Player) return;
+                        ytPlayer = new YT.Player('ytEl', {
+                            videoId: ytId,
+                            width: 1,
+                            height: 1,
+                            playerVars: { autoplay: 1, loop: 1, playlist: ytId }
+                        });
+                    }
+                    if (window.YT && window.YT.Player) initYt();
+                    else {
+                        var tag = document.createElement('script');
+                        tag.src = 'https://www.youtube.com/iframe_api';
+                        document.getElementsByTagName('script')[0].parentNode.insertBefore(tag, document.getElementsByTagName('script')[0]);
+                        window.onYouTubeIframeAPIReady = function() { initYt(); };
+                    }
+                } else if (url) {
+                    statusEl.textContent = 'Playing';
+                    audio.src = url;
+                    audio.play().catch(function() {});
+                } else {
+                    stopAndClose();
+                }
+            }
+
+            window.addEventListener('storage', function(e) {
+                if (e.key === 'backgroundPlaying' && e.newValue === '0') stopAndClose();
+                if (e.key === 'mainPlayerPlaying') {
+                    if (e.newValue === '1') {
+                        if (ytPlayer && ytPlayer.pauseVideo) ytPlayer.pauseVideo();
+                        audio.pause();
+                    } else {
+                        if (ytPlayer && ytPlayer.playVideo) ytPlayer.playVideo();
+                        if (audio.src) audio.play().catch(function() {});
+                    }
+                }
+            });
+
+            play();
+        })();
+    </script>
+</body>
+</html>

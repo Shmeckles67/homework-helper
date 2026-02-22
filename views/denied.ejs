@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Access Denied</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #000;
+            overflow: hidden;
+            font-family: monospace;
+        }
+        #matrix {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+        .message {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 10;
+            text-align: center;
+        }
+        h1 {
+            color: #0f0;
+            font-size: 4em;
+            text-shadow: 0 0 30px #0f0, 0 0 60px #0f0;
+            animation: glitch 1s infinite;
+            margin-bottom: 20px;
+        }
+        @keyframes glitch {
+            0%, 100% { transform: translate(0); }
+            20% { transform: translate(-2px, 2px); }
+            40% { transform: translate(-2px, -2px); }
+            60% { transform: translate(2px, 2px); }
+            80% { transform: translate(2px, -2px); }
+        }
+        .retry-btn {
+            background: #0f0;
+            color: #000;
+            padding: 15px 40px;
+            border: none;
+            border-radius: 5px;
+            font-size: 1.2em;
+            font-weight: bold;
+            cursor: pointer;
+            font-family: monospace;
+            box-shadow: 0 0 20px #0f0;
+            transition: all 0.3s;
+        }
+        .retry-btn:hover {
+            background: #0d0;
+            box-shadow: 0 0 40px #0f0;
+            transform: scale(1.1);
+        }
+    </style>
+</head>
+<body>
+    <canvas id="matrix"></canvas>
+    <div class="message">
+        <h1>BRO THOUGHT HE COULD! 😂</h1>
+        <button class="retry-btn" onclick="window.location.href='/password'">TRY AGAIN</button>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('matrix');
+        const ctx = canvas.getContext('2d');
+
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        // Matrix characters - mix of katakana, numbers, and symbols
+        const characters = '01アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲン';
+        const fontSize = 16;
+        const columns = Math.floor(canvas.width / fontSize);
+
+        // Array to store y-position of each column
+        const drops = Array(columns).fill(1);
+
+        function drawMatrix() {
+            // Semi-transparent black to create fade effect
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Green text
+            ctx.fillStyle = '#0f0';
+            ctx.font = fontSize + 'px monospace';
+
+            // Loop through columns
+            for (let i = 0; i < drops.length; i++) {
+                // Random character
+                const char = characters[Math.floor(Math.random() * characters.length)];
+                
+                // Draw character
+                ctx.fillText(char, i * fontSize, drops[i] * fontSize);
+
+                // Reset to top randomly after reaching bottom
+                if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
+                    drops[i] = 0;
+                }
+
+                // Move drop down
+                drops[i]++;
+            }
+        }
+
+        // Run the animation
+        setInterval(drawMatrix, 33);
+
+        // Resize canvas on window resize
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        });
+    </script>
+</body>
+</html>

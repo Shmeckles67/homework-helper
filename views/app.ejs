@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: <%= bodyBg %>;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        /* Fake Educational Site */
+        .fake-site {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .fake-site h1 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .fake-site .content {
+            color: #34495e;
+            line-height: 1.8;
+        }
+
+        .fake-site .section {
+            margin-bottom: 30px;
+        }
+
+        .fake-site h2 {
+            color: #3498db;
+            margin-bottom: 15px;
+        }
+
+        .fake-site ul {
+            margin-left: 20px;
+        }
+
+        .fake-site li {
+            margin-bottom: 10px;
+        }
+
+        /* Real App */
+        .real-app {
+            display: none;
+        }
+
+        .real-app.active {
+            display: block;
+        }
+
+        .owner-banner-app {
+            background: linear-gradient(90deg, rgba(102, 126, 234, 0.95) 0%, rgba(118, 75, 162, 0.95) 100%);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 0 0 14px 14px;
+            margin-bottom: 20px;
+            font-size: 1rem;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+            max-width: 1400px;
+            margin-left: auto;
+            margin-right: auto;
+            margin-bottom: 20px;
+        }
+        .owner-banner-app strong { margin-right: 8px; }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: <%= darkMode ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 255, 255, 0.2)' %>;
+            backdrop-filter: blur(10px);
+            padding: 30px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        .header h1 {
+            color: <%= darkMode ? '#e5e7eb' : '#1f2937' %>;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .welcome {
+            color: <%= darkMode ? '#9ca3af' : '#6b7280' %>;
+            font-size: 1.2em;
+        }
+
+        .stats {
+            display: flex;
+            gap: 30px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        .stat {
+            background: <%= darkMode ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 255, 255, 0.3)' %>;
+            padding: 15px 25px;
+            border-radius: 10px;
+            backdrop-filter: blur(5px);
+        }
+
+        .stat-value {
+            font-size: 1.8em;
+            font-weight: bold;
+            color: <%= darkMode ? '#60a5fa' : '#3b82f6' %>;
+        }
+
+        .stat-label {
+            color: <%= darkMode ? '#9ca3af' : '#6b7280' %>;
+            font-size: 0.9em;
+            margin-top: 5px;
+        }
+
+        .tools-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+        }
+
+        .tool-card {
+            background: <%= darkMode ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 255, 255, 0.2)' %>;
+            backdrop-filter: blur(10px);
+            padding: 30px;
+            border-radius: 15px;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            border: 2px solid transparent;
+            display: block;
+        }
+
+        .tool-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 12px 35px rgba(0, 0, 0, 0.2);
+            border-color: <%= darkMode ? 'rgba(139, 92, 246, 0.5)' : 'rgba(139, 92, 246, 0.3)' %>;
+            background: <%= darkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(255, 255, 255, 0.3)' %>;
+        }
+
+        .tool-icon {
+            font-size: 3em;
+            margin-bottom: 15px;
+        }
+
+        .tool-title {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: <%= darkMode ? '#e5e7eb' : '#1f2937' %>;
+            margin-bottom: 10px;
+        }
+
+        .tool-description {
+            color: <%= darkMode ? '#9ca3af' : '#6b7280' %>;
+            line-height: 1.6;
+        }
+
+        .logout-section {
+            margin-top: 30px;
+            text-align: center;
+        }
+
+        .btn {
+            padding: 12px 30px;
+            background: <%= darkMode ? 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)' : 'linear-gradient(135deg, #f87171 0%, #ef4444 100%)' %>;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            text-decoration: none;
+            font-size: 1.1em;
+            transition: all 0.3s ease;
+            display: inline-block;
+        }
+
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(239, 68, 68, 0.4);
+        }
+
+        .instruction {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: <%= darkMode ? 'rgba(0, 0, 0, 0.8)' : 'rgba(0, 0, 0, 0.7)' %>;
+            color: white;
+            padding: 15px 25px;
+            border-radius: 10px;
+            font-size: 0.9em;
+            animation: pulse 2s infinite;
+            z-index: 1000;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        @media (max-width: 768px) {
+            .stats {
+                flex-direction: column;
+            }
+
+            .tools-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .header h1 {
+                font-size: 2em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Fake Educational Site -->
+    <div class="fake-site" id="fakeSite">
+        <h1>📚 Study Skills and Academic Success</h1>
+        <div class="content">
+            <div class="section">
+                <h2>Effective Study Techniques</h2>
+                <p>Research shows that active learning strategies significantly improve retention and understanding. Here are some proven methods:</p>
+                <ul>
+                    <li><strong>Spaced Repetition:</strong> Review material at increasing intervals to enhance long-term memory</li>
+                    <li><strong>Active Recall:</strong> Test yourself regularly instead of passive re-reading</li>
+                    <li><strong>The Feynman Technique:</strong> Explain concepts in simple terms to identify knowledge gaps</li>
+                    <li><strong>Pomodoro Method:</strong> Study in focused 25-minute intervals with short breaks</li>
+                </ul>
+            </div>
+
+            <div class="section">
+                <h2>Time Management Strategies</h2>
+                <p>Balancing academic work with other responsibilities requires effective planning:</p>
+                <ul>
+                    <li>Create a weekly schedule blocking out study time</li>
+                    <li>Prioritize tasks using the Eisenhower Matrix (urgent vs. important)</li>
+                    <li>Break large projects into smaller, manageable tasks</li>
+                    <li>Use digital calendars or planners to track deadlines</li>
+                </ul>
+            </div>
+
+            <div class="section">
+                <h2>Note-Taking Best Practices</h2>
+                <p>Good notes are essential for effective studying:</p>
+                <ul>
+                    <li><strong>Cornell Method:</strong> Divide pages into notes, cues, and summary sections</li>
+                    <li><strong>Mind Mapping:</strong> Create visual diagrams connecting related concepts</li>
+                    <li><strong>Outline Method:</strong> Use hierarchical structure with main points and sub-points</li>
+                    <li>Review and revise notes within 24 hours of the lecture</li>
+                </ul>
+            </div>
+
+            <div class="section">
+                <h2>Test Preparation Tips</h2>
+                <p>Preparing for exams requires strategic planning:</p>
+                <ul>
+                    <li>Start studying at least one week before the exam</li>
+                    <li>Create practice tests and study guides</li>
+                    <li>Form study groups to discuss difficult concepts</li>
+                    <li>Get adequate sleep the night before the exam</li>
+                    <li>Review material multiple times using different methods</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Real App -->
+    <div class="real-app" id="realApp">
+        <% if (typeof ownerMessage !== 'undefined' && ownerMessage) { %>
+        <div class="owner-banner-app">
+            <strong>📢 Console:</strong><%= ownerMessage %>
+        </div>
+        <% } %>
+        <div class="container">
+            <div class="header">
+                <h1>🏠 Dashboard</h1>
+                <p class="welcome">Welcome back, <%= username %>! 👋</p>
+                <div class="stats">
+                    <div class="stat">
+                        <div class="stat-value"><%= isSuperAdmin ? '6' : '5' %></div>
+                        <div class="stat-label">Tools Available</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-value"><%= isSuperAdmin ? 'Super Admin' : (isAdmin ? 'Admin' : 'User') %></div>
+                        <div class="stat-label">Account Type</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-value">24/7</div>
+                        <div class="stat-label">Access</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tools-grid">
+                <a href="/calendar" class="tool-card">
+                    <div class="tool-icon">📅</div>
+                    <div class="tool-title">Calendar & Tasks</div>
+                    <div class="tool-description">Manage your schedule and tasks with a powerful calendar that extends all the way to 2027</div>
+                </a>
+
+                <a href="/voice-chat" class="tool-card">
+                    <div class="tool-icon">🎙️</div>
+                    <div class="tool-title">Voice Chat</div>
+                    <div class="tool-description">Make voice calls to other users in real-time</div>
+                </a>
+
+                <a href="/ai-assistant" class="tool-card">
+                    <div class="tool-icon">🤖</div>
+                    <div class="tool-title">AI Assistant</div>
+                    <div class="tool-description">Ask AI anything - homework help, questions, explanations, and more</div>
+                </a>
+
+                <a href="/scan" class="tool-card">
+                    <div class="tool-icon">📄</div>
+                    <div class="tool-title">Scan & Answer</div>
+                    <div class="tool-description">Upload a PDF or paste from Google Docs – get all questions and short answers, no long explanations</div>
+                </a>
+
+                <a href="/chat" class="tool-card">
+                    <div class="tool-icon">💬</div>
+                    <div class="tool-title">Chat Room</div>
+                    <div class="tool-description">Real-time text chat with other users</div>
+                </a>
+
+                <a href="/music" class="tool-card">
+                    <div class="tool-icon">🎵</div>
+                    <div class="tool-title">Music Player</div>
+                    <div class="tool-description">Listen to music, manage playlists, and enjoy your favorite tracks</div>
+                </a>
+
+                <a href="/settings" class="tool-card">
+                    <div class="tool-icon">🎨</div>
+                    <div class="tool-title">Customize</div>
+                    <div class="tool-description">Personalize your experience with custom themes, colors, and backgrounds</div>
+                </a>
+
+                <% if (isSuperAdmin) { %>
+                <a href="/admin-panel" class="tool-card">
+                    <div class="tool-icon">🛡️</div>
+                    <div class="tool-title">Admin Panel</div>
+                    <div class="tool-description">Manage users, create accounts, ban/unban users, and promote members</div>
+                </a>
+                <% } %>
+            </div>
+
+            <div class="logout-section">
+                <a href="/logout" class="btn">🚪 Logout</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="instruction" id="instruction">Press CTRL+G (or CMD+G on Mac) to toggle</div>
+
+    <script>
+        const fakeSite = document.getElementById('fakeSite');
+        const realApp = document.getElementById('realApp');
+        const instruction = document.getElementById('instruction');
+
+        // Check if user has already revealed the app in this session
+        const hasRevealed = sessionStorage.getItem('appRevealed');
+        
+        if (hasRevealed) {
+            fakeSite.style.display = 'none';
+            realApp.classList.add('active');
+            instruction.style.display = 'none';
+        }
+
+        // Toggle between fake and real with CTRL+G or CMD+G
+        document.addEventListener('keydown', (e) => {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'g') {
+                e.preventDefault();
+                
+                if (fakeSite.style.display === 'none') {
+                    // Show fake site
+                    fakeSite.style.display = 'block';
+                    realApp.classList.remove('active');
+                    instruction.style.display = 'block';
+                    sessionStorage.removeItem('appRevealed');
+                } else {
+                    // Show real app
+                    fakeSite.style.display = 'none';
+                    realApp.classList.add('active');
+                    instruction.style.display = 'none';
+                    sessionStorage.setItem('appRevealed', 'true');
+                }
+            }
+        });
+
+        // Auto-logout prevention
+        let isNavigating = false;
+        document.querySelectorAll('a, button[type="submit"]').forEach(element => {
+            element.addEventListener('click', () => {
+                isNavigating = true;
+            });
+        });
+    </script>
+</body>
+</html> 

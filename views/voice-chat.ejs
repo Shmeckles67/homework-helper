@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voice Calls</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%23667eea'/><text x='50' y='70' font-size='60' text-anchor='middle' fill='white' font-family='Arial'>📚</text></svg>">
+    <script src="/socket.io/socket.io.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: <%= typeof bodyBg !== 'undefined' ? bodyBg : 'linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)' %>;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: <%= darkMode ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 255, 255, 0.95)' %>;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 3px solid <%= darkMode ? 'rgba(255, 255, 255, 0.2)' : '#a8edea' %>;
+        }
+        h1 { color: <%= darkMode ? '#e5e7eb' : '#2c3e50' %>; font-size: 2.5em; }
+        .btn {
+            background: <%= darkMode ? 'rgba(255, 255, 255, 0.15)' : 'linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)' %>;
+            color: <%= darkMode ? '#e5e7eb' : '#2c3e50' %>;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: 600;
+            text-decoration: none;
+        }
+        .call-section {
+            background: <%= darkMode ? 'rgba(255, 255, 255, 0.05)' : 'rgba(168, 237, 234, 0.1)' %>;
+            padding: 30px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+        }
+        .call-input-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        input {
+            flex: 1;
+            padding: 15px;
+            border: 2px solid <%= darkMode ? 'rgba(255, 255, 255, 0.2)' : '#ddd' %>;
+            border-radius: 10px;
+            font-size: 1em;
+            background: <%= darkMode ? 'rgba(0, 0, 0, 0.2)' : 'white' %>;
+            color: <%= darkMode ? '#e5e7eb' : '#1f2937' %>;
+        }
+        .call-btn {
+            padding: 15px 30px;
+            background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+            color: <%= darkMode ? '#1f2937' : '#2c3e50' %>;
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 1.1em;
+        }
+        .call-btn:hover { transform: scale(1.05); }
+        .status {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            display: none;
+        }
+        .status.active { display: block; }
+        .status.calling {
+            background: #fff3cd;
+            color: #856404;
+        }
+        .status.connected {
+            background: #d4fc79;
+            color: #2c3e50;
+        }
+        .incoming-call {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: <%= darkMode ? '#1f2937' : 'white' %>;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            text-align: center;
+            z-index: 1000;
+            display: none;
+        }
+        .incoming-call.active { display: block; }
+        .incoming-call h2 {
+            color: <%= darkMode ? '#e5e7eb' : '#2c3e50' %>;
+            margin-bottom: 20px;
+        }
+        .call-actions {
+            display: flex;
+            gap: 15px;
+            margin-top: 25px;
+        }
+        .accept-btn {
+            flex: 1;
+            padding: 15px;
+            background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+            color: #2c3e50;
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 1.1em;
+        }
+        .reject-btn {
+            flex: 1;
+            padding: 15px;
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 1.1em;
+        }
+        .end-call-btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 1.1em;
+            margin-top: 20px;
+            display: none;
+        }
+        .end-call-btn.active { display: block; }
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 999;
+            display: none;
+        }
+        .overlay.active { display: block; }
+        .online-users {
+            margin-top: 30px;
+        }
+        .online-users h3 {
+            color: <%= darkMode ? '#e5e7eb' : '#2c3e50' %>;
+            margin-bottom: 15px;
+        }
+        .user-list {
+            display: grid;
+            gap: 10px;
+        }
+        .user-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            background: <%= darkMode ? 'rgba(255, 255, 255, 0.05)' : 'rgba(168, 237, 234, 0.1)' %>;
+            border-radius: 10px;
+        }
+        .user-name {
+            font-weight: 600;
+            color: <%= darkMode ? '#e5e7eb' : '#2c3e50' %>;
+        }
+        .quick-call-btn {
+            padding: 8px 20px;
+            background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+            color: #2c3e50;
+            border: none;
+            border-radius: 15px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <% if (typeof ownerMessage !== 'undefined' && ownerMessage) { %>
+    <div class="owner-banner-page" style="max-width: 800px; margin: 0 auto 20px; background: linear-gradient(90deg, rgba(102, 126, 234, 0.95) 0%, rgba(118, 75, 162, 0.95) 100%); color: white; padding: 10px 20px; border-radius: 0 0 12px 12px; font-size: 0.95rem; box-shadow: 0 4px 12px rgba(0,0,0,0.1);"><strong>📢 Console:</strong><%= ownerMessage %></div>
+    <% } %>
+    <div class="overlay" id="overlay"></div>
+    
+    <div class="incoming-call" id="incomingCall">
+        <h2>📞 Incoming Call</h2>
+        <p style="font-size: 1.3em; color: #666; margin: 15px 0;">
+            <strong id="callerName"></strong> is calling you...
+        </p>
+        <div class="call-actions">
+            <button class="accept-btn" id="acceptCall">✅ Accept</button>
+            <button class="reject-btn" id="rejectCall">❌ Reject</button>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="header">
+            <h1>📞 Voice Calls</h1>
+            <a href="/app" class="btn">← Back</a>
+        </div>
+
+        <div class="call-section">
+            <h2 style="color: #2c3e50; margin-bottom: 15px;">Make a Call</h2>
+            <p style="color: #666;">Enter a username to call them directly</p>
+            
+            <div class="call-input-group">
+                <input type="text" id="callUsername" placeholder="Enter username to call...">
+                <button class="call-btn" id="makeCall">📞 Call</button>
+            </div>
+
+            <div class="status" id="status"></div>
+            
+            <button class="end-call-btn" id="endCall">🔴 End Call</button>
+        </div>
+
+        <div class="online-users">
+            <h3>👥 Online Users (<span id="userCount">0</span>)</h3>
+            <div class="user-list" id="userList">
+                <p style="text-align: center; color: #999; padding: 20px;">Loading...</p>
+            </div>
+        </div>
+    </div>
+
+    <audio id="remoteAudio" autoplay></audio>
+    <audio id="ringtone" loop>
+        <source src="data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBDGH0fPTgjMGHm7A7+OZUQ0PVKzn77BdGAg+ltryxnMnBSp+zPLZijoIGGS57OKhUQ0PUKzn77BdGAg+ltryxnMnBSp+zPLZijoIGGS57OKhUQ0PUKzn77BdGAg+ltryxnMnBSp+zPLZijoIGGS57OKhUQ0PUKzn77BdGAg+ltryxnMnBSp+zPLZijoIGGS57OKhUQ0PUKzn77BdGAg+ltryxnMnBSp+zPLZijoIGGS57OKhUQ0PUKzn77BdGAg+ltryxnMnBSp+zPLZijoIGGS57OKhUQ0PUKzn77BdGAg+ltryxnMnBSp+zPLZijoIGGS57OKhUQ0PUKzn77BdGAg+ltryxnMnBSp+zPLZijoIGGS57OKhUQ0PUKzn77BdGAg+ltryxnMnBSp+zPLZijoIGGS57OKhUQ0PUKzn77BdGAg+ltryxnMnBSp+zPLZijoIGGS57OKhUQ0PUKzn77BdGAg+ltryxnMnBSp+zPLZijoIGGS57OKhUQ0PUKzn77BdGAg+ltryxnMnBSp+zPLZijoIGGS57OKhUQ0PUKzn77BdGAg+ltryxnMnBSp+zPLZijoIGGS57OA=" type="audio/wav">
+    </audio>
+
+    <script>
+        console.log('🔵 Voice chat script started');
+        
+        const socket = io();
+        console.log('🔵 Socket.IO initialized');
+        
+        const username = '<%= username %>';
+        console.log('🔵 Username:', username);
+        
+        let localStream = null;
+        let remoteStream = null;
+        let peerConnection = null;
+        let currentCall = null;
+        let isInCall = false;
+
+        const configuration = {
+            iceServers: [
+                { urls: 'stun:stun.l.google.com:19302' },
+                { urls: 'stun:stun1.l.google.com:19302' }
+            ]
+        };
+
+        console.log('🔵 Configuration set');
+
+        // Register user
+        socket.emit('voice_register', username);
+        console.log('🔵 Registered user for voice calls');
+
+        // Update online users
+        socket.on('voice_online_users', (users) => {
+            console.log('🔵 Received online users:', users);
+            const userList = document.getElementById('userList');
+            const userCount = document.getElementById('userCount');
+            
+            const otherUsers = users.filter(u => u !== username);
+            userCount.textContent = otherUsers.length;
+            
+            if (otherUsers.length === 0) {
+                userList.innerHTML = '<p style="text-align: center; color: #999; padding: 20px;">No other users online</p>';
+            } else {
+                userList.innerHTML = otherUsers.map(user => `
+                    <div class="user-item">
+                        <span class="user-name">👤 ${user}</span>
+                        <button class="quick-call-btn" onclick="quickCall('${user}')">📞 Call</button>
+                    </div>
+                `).join('');
+            }
+        });
+
+        // Quick call function
+        window.quickCall = (targetUser) => {
+            console.log('🟢 Quick call to:', targetUser);
+            document.getElementById('callUsername').value = targetUser;
+            document.getElementById('makeCall').click();
+        };
+
+        // Make a call
+        document.getElementById('makeCall').addEventListener('click', async () => {
+            console.log('🟢 Make call button clicked');
+            
+            const targetUser = document.getElementById('callUsername').value.trim();
+            console.log('🟢 Target user:', targetUser);
+            
+            if (!targetUser) {
+                alert('Please enter a username!');
+                return;
+            }
+
+            if (targetUser === username) {
+                alert('You cannot call yourself!');
+                return;
+            }
+
+            if (isInCall) {
+                alert('You are already in a call!');
+                return;
+            }
+
+            try {
+                console.log('🟢 Requesting microphone access...');
+                // Get microphone access
+                localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+                console.log('✅ Microphone access granted');
+                
+                // Show calling status
+                showStatus(`Calling ${targetUser}...`, 'calling');
+                
+                // Send call request
+                socket.emit('voice_call_request', { from: username, to: targetUser });
+                console.log('🟢 Call request sent to:', targetUser);
+                currentCall = targetUser;
+                
+            } catch (err) {
+                console.error('❌ Microphone error:', err);
+                alert('Could not access microphone! Please allow microphone access.');
+            }
+        });
+
+        console.log('🔵 Event listeners attached');
+        console.log('🔵 Voice chat ready!');
+
+        // Receive incoming call
+        socket.on('voice_incoming_call', (data) => {
+            if (isInCall) {
+                socket.emit('voice_call_busy', { from: username, to: data.from });
+                return;
+            }
+
+            document.getElementById('callerName').textContent = data.from;
+            document.getElementById('incomingCall').classList.add('active');
+            document.getElementById('overlay').classList.add('active');
+            
+            // Play ringtone
+            const ringtone = document.getElementById('ringtone');
+            ringtone.play();
+            
+            currentCall = data.from;
+        });
+
+        // Accept call
+        document.getElementById('acceptCall').addEventListener('click', async () => {
+            document.getElementById('ringtone').pause();
+            document.getElementById('incomingCall').classList.remove('active');
+            document.getElementById('overlay').classList.remove('active');
+
+            try {
+                localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+                
+                socket.emit('voice_call_accepted', { from: username, to: currentCall });
+                showStatus(`Connected with ${currentCall}`, 'connected');
+                document.getElementById('endCall').classList.add('active');
+                isInCall = true;
+                
+            } catch (err) {
+                alert('Could not access microphone!');
+                console.error(err);
+            }
+        });
+
+        // Reject call
+        document.getElementById('rejectCall').addEventListener('click', () => {
+            document.getElementById('ringtone').pause();
+            document.getElementById('incomingCall').classList.remove('active');
+            document.getElementById('overlay').classList.remove('active');
+            
+            socket.emit('voice_call_rejected', { from: username, to: currentCall });
+            currentCall = null;
+        });
+
+        // Call accepted by other user
+        socket.on('voice_call_accepted', (data) => {
+            if (data.from === currentCall) {
+                showStatus(`Connected with ${currentCall}`, 'connected');
+                document.getElementById('endCall').classList.add('active');
+                isInCall = true;
+                startCall(true);
+            }
+        });
+
+        // Call rejected
+        socket.on('voice_call_rejected', (data) => {
+            showStatus(`${data.from} rejected your call`, 'calling');
+            endCall();
+        });
+
+        // User busy
+        socket.on('voice_call_busy', (data) => {
+            showStatus(`${data.from} is busy`, 'calling');
+            endCall();
+        });
+
+        // Receive WebRTC offer
+        socket.on('voice_webrtc_offer', async (data) => {
+            if (data.to === username) {
+                await createPeerConnection();
+                await peerConnection.setRemoteDescription(new RTCSessionDescription(data.offer));
+                const answer = await peerConnection.createAnswer();
+                await peerConnection.setLocalDescription(answer);
+                socket.emit('voice_webrtc_answer', { from: username, to: data.from, answer });
+            }
+        });
+
+        // Receive WebRTC answer
+        socket.on('voice_webrtc_answer', async (data) => {
+            if (data.to === username && peerConnection) {
+                await peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer));
+            }
+        });
+
+        // Receive ICE candidate
+        socket.on('voice_ice_candidate', async (data) => {
+            if (data.to === username && peerConnection) {
+                await peerConnection.addIceCandidate(new RTCIceCandidate(data.candidate));
+            }
+        });
+
+        // Other user ended call
+        socket.on('voice_call_ended', () => {
+            endCall();
+            showStatus('Call ended', 'calling');
+        });
+
+        // Start WebRTC connection
+        async function startCall(isInitiator) {
+            await createPeerConnection();
+            
+            if (isInitiator) {
+                const offer = await peerConnection.createOffer();
+                await peerConnection.setLocalDescription(offer);
+                socket.emit('voice_webrtc_offer', { from: username, to: currentCall, offer });
+            }
+        }
+
+        // Create peer connection
+        async function createPeerConnection() {
+            peerConnection = new RTCPeerConnection(configuration);
+            
+            // Add local stream
+            localStream.getTracks().forEach(track => {
+                peerConnection.addTrack(track, localStream);
+            });
+            
+            // Handle remote stream
+            peerConnection.ontrack = (event) => {
+                const remoteAudio = document.getElementById('remoteAudio');
+                remoteAudio.srcObject = event.streams[0];
+            };
+            
+            // Handle ICE candidates
+            peerConnection.onicecandidate = (event) => {
+                if (event.candidate) {
+                    socket.emit('voice_ice_candidate', { 
+                        from: username, 
+                        to: currentCall, 
+                        candidate: event.candidate 
+                    });
+                }
+            };
+        }
+
+        // End call button
+        document.getElementById('endCall').addEventListener('click', () => {
+            socket.emit('voice_end_call', { from: username, to: currentCall });
+            endCall();
+        });
+
+        // End call function
+        function endCall() {
+            if (localStream) {
+                localStream.getTracks().forEach(track => track.stop());
+                localStream = null;
+            }
+            
+            if (peerConnection) {
+                peerConnection.close();
+                peerConnection = null;
+            }
+            
+            document.getElementById('status').classList.remove('active');
+            document.getElementById('endCall').classList.remove('active');
+            document.getElementById('callUsername').value = '';
+            currentCall = null;
+            isInCall = false;
+        }
+
+        // Show status
+        function showStatus(message, type) {
+            const status = document.getElementById('status');
+            status.textContent = message;
+            status.className = 'status active ' + type;
+        }
+
+        // Cleanup on page leave
+        window.addEventListener('beforeunload', () => {
+            if (isInCall) {
+                socket.emit('voice_end_call', { from: username, to: currentCall });
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Assistant</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: <%= typeof bodyBg !== 'undefined' ? bodyBg : (darkMode ? 'linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)' : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)') %>;
+            min-height: 100vh;
+            padding: 20px;
+            color: <%= darkMode ? '#e5e7eb' : '#1f2937' %>;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: <%= darkMode ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 255, 255, 0.2)' %>;
+            backdrop-filter: blur(10px);
+            padding: 20px 30px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        .header h1 {
+            font-size: 2em;
+            color: <%= darkMode ? '#e5e7eb' : '#fff' %>;
+        }
+
+        .nav-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            background: <%= darkMode ? 'linear-gradient(135deg, #374151 0%, #4b5563 100%)' : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' %>;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            text-decoration: none;
+            font-size: 1em;
+            transition: all 0.3s ease;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .config-section {
+            background: <%= darkMode ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 255, 255, 0.2)' %>;
+            backdrop-filter: blur(10px);
+            padding: 30px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        .config-section h2 {
+            margin-bottom: 20px;
+            color: <%= darkMode ? '#e5e7eb' : '#1f2937' %>;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: <%= darkMode ? '#e5e7eb' : '#1f2937' %>;
+        }
+
+        .form-group select,
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            background: <%= darkMode ? 'rgba(0, 0, 0, 0.3)' : 'rgba(255, 255, 255, 0.5)' %>;
+            border: 2px solid <%= darkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)' %>;
+            border-radius: 8px;
+            color: <%= darkMode ? '#e5e7eb' : '#1f2937' %>;
+            font-size: 1em;
+        }
+
+        .save-btn {
+            padding: 12px 30px;
+            background: <%= darkMode ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)' : 'linear-gradient(135deg, #34d399 0%, #10b981 100%)' %>;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: all 0.3s ease;
+        }
+
+        .save-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(16, 185, 129, 0.4);
+        }
+
+        .chat-section {
+            background: <%= darkMode ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 255, 255, 0.2)' %>;
+            backdrop-filter: blur(10px);
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        .chat-messages {
+            max-height: 500px;
+            overflow-y: auto;
+            margin-bottom: 20px;
+            padding: 20px;
+            background: <%= darkMode ? 'rgba(0, 0, 0, 0.2)' : 'rgba(255, 255, 255, 0.3)' %>;
+            border-radius: 10px;
+        }
+
+        .message {
+            margin-bottom: 15px;
+            padding: 15px;
+            border-radius: 10px;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .message.user {
+            background: <%= darkMode ? 'rgba(139, 92, 246, 0.3)' : 'rgba(139, 92, 246, 0.2)' %>;
+            margin-left: auto;
+            max-width: 80%;
+        }
+
+        .message.ai {
+            background: <%= darkMode ? 'rgba(59, 130, 246, 0.3)' : 'rgba(59, 130, 246, 0.2)' %>;
+            max-width: 80%;
+        }
+
+        .message-label {
+            font-weight: bold;
+            margin-bottom: 8px;
+            color: <%= darkMode ? '#e5e7eb' : '#1f2937' %>;
+        }
+
+        .message-text {
+            color: <%= darkMode ? '#d1d5db' : '#374151' %>;
+            line-height: 1.6;
+            white-space: pre-wrap;
+        }
+
+        .input-section {
+            display: flex;
+            gap: 10px;
+        }
+
+        .question-input {
+            flex: 1;
+            padding: 15px;
+            background: <%= darkMode ? 'rgba(0, 0, 0, 0.3)' : 'rgba(255, 255, 255, 0.5)' %>;
+            border: 2px solid <%= darkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)' %>;
+            border-radius: 10px;
+            color: <%= darkMode ? '#e5e7eb' : '#1f2937' %>;
+            font-size: 1em;
+        }
+
+        .ask-btn {
+            padding: 15px 30px;
+            background: <%= darkMode ? 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)' : 'linear-gradient(135deg, #a78bfa 0%, #8b5cf6 100%)' %>;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: all 0.3s ease;
+        }
+
+        .ask-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(139, 92, 246, 0.4);
+        }
+
+        .ask-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .examples {
+            margin-top: 20px;
+        }
+
+        .examples h3 {
+            margin-bottom: 10px;
+            color: <%= darkMode ? '#e5e7eb' : '#1f2937' %>;
+        }
+
+        .example-btn {
+            padding: 8px 15px;
+            background: <%= darkMode ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 255, 255, 0.3)' %>;
+            color: <%= darkMode ? '#e5e7eb' : '#1f2937' %>;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            margin: 5px;
+            transition: all 0.3s ease;
+        }
+
+        .example-btn:hover {
+            background: <%= darkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(255, 255, 255, 0.4)' %>;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: <%= darkMode ? '#9ca3af' : '#6b7280' %>;
+        }
+
+        .loading::after {
+            content: '...';
+            animation: dots 1.5s steps(4, end) infinite;
+        }
+
+        @keyframes dots {
+            0%, 20% { content: '.'; }
+            40% { content: '..'; }
+            60%, 100% { content: '...'; }
+        }
+    </style>
+</head>
+<body>
+    <% if (typeof ownerMessage !== 'undefined' && ownerMessage) { %>
+    <div class="owner-banner-page" style="max-width: 1200px; margin: 0 auto 20px; background: linear-gradient(90deg, rgba(102, 126, 234, 0.95) 0%, rgba(118, 75, 162, 0.95) 100%); color: white; padding: 10px 20px; border-radius: 0 0 12px 12px; font-size: 0.95rem; box-shadow: 0 4px 12px rgba(0,0,0,0.1);"><strong>📢 Console:</strong><%= ownerMessage %></div>
+    <% } %>
+    <div class="container">
+        <div class="header">
+            <h1>🤖 AI Assistant</h1>
+            <div class="nav-buttons">
+                <a href="/app" class="btn">← Back to Dashboard</a>
+                <a href="/logout" class="btn">🚪 Logout</a>
+            </div>
+        </div>
+
+        <div class="config-section">
+            <h2>⚙️ AI Configuration</h2>
+            <div class="form-group">
+                <label for="provider">AI Provider:</label>
+                <select id="provider">
+                    <option value="claude">Claude (Anthropic)</option>
+                    <option value="openai">ChatGPT (OpenAI)</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="apiKey">API Key:</label>
+                <input type="password" id="apiKey" placeholder="Enter your API key...">
+            </div>
+            <button class="save-btn" onclick="saveConfig()">💾 Save Configuration</button>
+        </div>
+
+        <div class="chat-section">
+            <div class="chat-messages" id="chatMessages"></div>
+
+            <div class="input-section">
+                <input type="text" class="question-input" id="questionInput" placeholder="Ask me anything..." autocomplete="off">
+                <button class="ask-btn" id="askBtn" onclick="askQuestion()">Ask 🚀</button>
+            </div>
+
+            <div class="examples">
+                <h3>💡 Example Questions:</h3>
+                <button class="example-btn" onclick="askExample('Explain quantum physics in simple terms')">🔬 Explain quantum physics in simple terms</button>
+                <button class="example-btn" onclick="askExample('Help me write an essay about climate change')">✍️ Help me write an essay about climate change</button>
+                <button class="example-btn" onclick="askExample('Solve this math problem: 2x + 5 = 13')">🧮 Solve this math problem: 2x + 5 = 13</button>
+                <button class="example-btn" onclick="askExample('What are the best study techniques?')">📚 What are the best study techniques?</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let config = {
+            provider: 'claude',
+            apiKey: ''
+        };
+
+        // Load saved config
+        const savedConfig = localStorage.getItem('aiConfig');
+        if (savedConfig) {
+            config = JSON.parse(savedConfig);
+            document.getElementById('provider').value = config.provider;
+            document.getElementById('apiKey').value = config.apiKey;
+        }
+
+        function saveConfig() {
+            config.provider = document.getElementById('provider').value;
+            config.apiKey = document.getElementById('apiKey').value;
+            
+            if (!config.apiKey) {
+                alert('Please enter an API key!');
+                return;
+            }
+            
+            localStorage.setItem('aiConfig', JSON.stringify(config));
+            alert('✅ Configuration saved!');
+        }
+
+        function addMessage(text, type) {
+            const messagesDiv = document.getElementById('chatMessages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${type}`;
+            
+            messageDiv.innerHTML = `
+                <div class="message-label">${type === 'user' ? '👤 You' : '🤖 AI Assistant'}</div>
+                <div class="message-text">${text}</div>
+            `;
+            
+            messagesDiv.appendChild(messageDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        function addLoading() {
+            const messagesDiv = document.getElementById('chatMessages');
+            const loadingDiv = document.createElement('div');
+            loadingDiv.id = 'loadingIndicator';
+            loadingDiv.className = 'loading';
+            loadingDiv.textContent = 'AI is thinking';
+            messagesDiv.appendChild(loadingDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        function removeLoading() {
+            const loading = document.getElementById('loadingIndicator');
+            if (loading) loading.remove();
+        }
+
+        async function askQuestion() {
+            const input = document.getElementById('questionInput');
+            const question = input.value.trim();
+            
+            if (!question) {
+                alert('Please enter a question!');
+                return;
+            }
+            
+            if (!config.apiKey) {
+                alert('Please configure your API key first!');
+                return;
+            }
+            
+            const askBtn = document.getElementById('askBtn');
+            askBtn.disabled = true;
+            
+            addMessage(question, 'user');
+            input.value = '';
+            addLoading();
+            
+            try {
+                const response = await fetch('/api/ai', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        provider: config.provider,
+                        apiKey: config.apiKey,
+                        prompt: question
+                    })
+                });
+                
+                const data = await response.json();
+                removeLoading();
+                
+                let aiResponse = '';
+                if (config.provider === 'claude') {
+                    aiResponse = data.content[0].text;
+                } else if (config.provider === 'openai') {
+                    aiResponse = data.choices[0].message.content;
+                }
+                
+                addMessage(aiResponse, 'ai');
+            } catch (error) {
+                removeLoading();
+                addMessage('❌ Error: ' + error.message, 'ai');
+            }
+            
+            askBtn.disabled = false;
+        }
+
+        function askExample(question) {
+            document.getElementById('questionInput').value = question;
+            askQuestion();
+        }
+
+        // Enter key to ask
+        document.getElementById('questionInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                askQuestion();
+            }
+        });
+
+        // Auto-logout prevention
+        let isNavigating = false;
+        document.querySelectorAll('a, button[type="submit"]').forEach(element => {
+            element.addEventListener('click', () => {
+                isNavigating = true;
+            });
+        });
+    </script>
+</body>
+</html>

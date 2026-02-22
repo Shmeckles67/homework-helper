@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat Room</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: <%= typeof bodyBg !== 'undefined' ? bodyBg : (darkMode ? 'linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)' : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)') %>;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        .chat-main-wrap {
+            display: flex;
+            flex: 1;
+            min-height: 0;
+        }
+
+        .sidebar {
+            width: 300px;
+            background: <%= darkMode ? 'rgba(0, 0, 0, 0.3)' : 'rgba(0, 0, 0, 0.2)' %>;
+            backdrop-filter: blur(10px);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .sidebar h2 {
+            color: <%= darkMode ? '#e5e7eb' : '#fff' %>;
+            font-size: 1.5em;
+            margin-bottom: 10px;
+        }
+
+        .nav-links {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .nav-link {
+            padding: 12px 20px;
+            background: <%= darkMode ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 255, 255, 0.2)' %>;
+            color: <%= darkMode ? '#e5e7eb' : '#fff' %>;
+            text-decoration: none;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+
+        .nav-link:hover {
+            background: <%= darkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(255, 255, 255, 0.3)' %>;
+            transform: translateX(5px);
+        }
+
+        .online-users {
+            flex: 1;
+        }
+
+        .user-item {
+            padding: 10px;
+            background: <%= darkMode ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 255, 255, 0.2)' %>;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            color: <%= darkMode ? '#e5e7eb' : '#fff' %>;
+        }
+
+        .user-item.online::before {
+            content: '🟢 ';
+        }
+
+        .private-room-btn {
+            padding: 12px 20px;
+            background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .private-room-btn::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 10px;
+            height: 10px;
+            background: #ef4444;
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            animation: pulse-dot 2s infinite;
+        }
+
+        @keyframes pulse-dot {
+            0%, 100% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+            50% { opacity: 0.5; transform: translate(-50%, -50%) scale(1.5); }
+        }
+
+        .private-room-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(251, 191, 36, 0.4);
+        }
+
+        .chat-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+        }
+
+        .chat-header {
+            background: <%= darkMode ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 255, 255, 0.2)' %>;
+            backdrop-filter: blur(10px);
+            padding: 20px 30px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .chat-header h1 {
+            color: <%= darkMode ? '#e5e7eb' : '#fff' %>;
+            font-size: 2em;
+        }
+
+        .chat-messages {
+            flex: 1;
+            background: <%= darkMode ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 255, 255, 0.2)' %>;
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 20px;
+            overflow-y: auto;
+            margin-bottom: 20px;
+            max-height: calc(100vh - 300px);
+        }
+
+        .message {
+            margin-bottom: 15px;
+            padding: 12px 15px;
+            background: <%= darkMode ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 255, 255, 0.2)' %>;
+            border-radius: 10px;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .message.own {
+            background: <%= darkMode ? 'rgba(139, 92, 246, 0.3)' : 'rgba(139, 92, 246, 0.2)' %>;
+            margin-left: auto;
+            max-width: 70%;
+        }
+
+        .message.other {
+            background: <%= darkMode ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 255, 255, 0.15)' %>;
+            max-width: 70%;
+        }
+
+        .message-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 5px;
+        }
+
+        .message-username {
+            font-weight: bold;
+            color: <%= darkMode ? '#e5e7eb' : '#1f2937' %>;
+        }
+
+        .admin-badge {
+            background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+            color: white;
+            padding: 2px 8px;
+            border-radius: 5px;
+            font-size: 0.8em;
+            font-weight: bold;
+        }
+
+        .message-time {
+            font-size: 0.8em;
+            color: <%= darkMode ? '#9ca3af' : '#6b7280' %>;
+        }
+
+        .message-text {
+            color: <%= darkMode ? '#d1d5db' : '#374151' %>;
+            word-wrap: break-word;
+        }
+
+        .chat-input-container {
+            background: <%= darkMode ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 255, 255, 0.2)' %>;
+            backdrop-filter: blur(10px);
+            padding: 20px;
+            border-radius: 15px;
+            display: flex;
+            gap: 10px;
+        }
+
+        .chat-input {
+            flex: 1;
+            padding: 15px;
+            background: <%= darkMode ? 'rgba(0, 0, 0, 0.3)' : 'rgba(255, 255, 255, 0.5)' %>;
+            border: 2px solid <%= darkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)' %>;
+            border-radius: 10px;
+            color: <%= darkMode ? '#e5e7eb' : '#1f2937' %>;
+            font-size: 1em;
+        }
+
+        .chat-input:focus {
+            outline: none;
+            border-color: <%= darkMode ? 'rgba(139, 92, 246, 0.5)' : 'rgba(139, 92, 246, 0.3)' %>;
+        }
+
+        .send-btn {
+            padding: 15px 30px;
+            background: <%= darkMode ? 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)' : 'linear-gradient(135deg, #a78bfa 0%, #8b5cf6 100%)' %>;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: all 0.3s ease;
+        }
+
+        .send-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(139, 92, 246, 0.4);
+        }
+
+        .typing-indicator {
+            color: <%= darkMode ? '#9ca3af' : '#6b7280' %>;
+            font-style: italic;
+            padding: 10px;
+            display: none;
+        }
+
+        @media (max-width: 768px) {
+            body {
+                flex-direction: column;
+            }
+
+            .sidebar {
+                width: 100%;
+                max-height: 200px;
+                overflow-y: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <% if (typeof ownerMessage !== 'undefined' && ownerMessage) { %>
+    <div class="owner-banner-page" style="flex: 0 0 auto; width: 100%; background: linear-gradient(90deg, rgba(102, 126, 234, 0.95) 0%, rgba(118, 75, 162, 0.95) 100%); color: white; padding: 10px 20px; border-radius: 0 0 12px 12px; font-size: 0.95rem; box-shadow: 0 4px 12px rgba(0,0,0,0.1);"><strong>📢 Console:</strong><%= ownerMessage %></div>
+    <% } %>
+    <div class="chat-main-wrap">
+    <div class="sidebar">
+        <h2>📱 Navigation</h2>
+        <div class="nav-links">
+            <a href="/app" class="nav-link">🏠 Dashboard</a>
+            <a href="/calendar" class="nav-link">📅 Calendar</a>
+            <a href="/voice-chat" class="nav-link">🎙️ Voice Chat</a>
+            <a href="/ai-assistant" class="nav-link">🤖 AI Assistant</a>
+            <a href="/settings" class="nav-link">🎨 Customize</a>
+            <% if (isSuperAdmin) { %>
+            <a href="/admin-panel" class="nav-link">🛡️ Admin Panel</a>
+            <button class="private-room-btn" onclick="togglePrivateRoom()">🔒 Private Room</button>
+            <% } %>
+            <a href="/logout" class="nav-link">🚪 Logout</a>
+        </div>
+
+        <div class="online-users">
+            <h2>👥 Online (<span id="onlineCount">0</span>)</h2>
+            <div id="usersList"></div>
+        </div>
+    </div>
+
+    <div class="chat-container">
+        <div class="chat-header">
+            <h1 id="chatTitle">💬 Public Chat Room</h1>
+        </div>
+
+        <div class="chat-messages" id="messages"></div>
+
+        <div class="typing-indicator" id="typingIndicator">Someone is typing...</div>
+
+        <div class="chat-input-container">
+            <input type="text" class="chat-input" id="messageInput" placeholder="Type your message..." autocomplete="off">
+            <button class="send-btn" onclick="sendMessage()">Send 📤</button>
+        </div>
+    </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+        const username = '<%= username %>';
+        const isAdmin = <%= isAdmin %>;
+        const isSuperAdmin = <%= isSuperAdmin %>;
+        let isPrivateRoom = false;
+
+        // Register user
+        socket.emit('register-user', username);
+
+        // Online users
+        socket.on('online-users', (users) => {
+            document.getElementById('onlineCount').textContent = users.length;
+            const usersList = document.getElementById('usersList');
+            usersList.innerHTML = users.map(user => 
+                `<div class="user-item online">${user}</div>`
+            ).join('');
+        });
+
+        // Message history
+        socket.on('message-history', (messages) => {
+            if (!isPrivateRoom) {
+                messages.forEach(msg => displayMessage(msg));
+            }
+        });
+
+        // Private message history (for super admins)
+        socket.on('private-message-history', (messages) => {
+            if (isPrivateRoom) {
+                messages.forEach(msg => displayMessage(msg));
+            }
+        });
+
+        // New message
+        socket.on('chat-message', (message) => {
+            if (!isPrivateRoom) {
+                displayMessage(message);
+            }
+        });
+
+        // Private message
+        socket.on('private-message', (message) => {
+            if (isPrivateRoom) {
+                displayMessage(message);
+            }
+        });
+
+        // Typing indicator
+        socket.on('typing', (data) => {
+            const indicator = document.getElementById('typingIndicator');
+            indicator.textContent = `${data.username} is typing...`;
+            indicator.style.display = 'block';
+            
+            setTimeout(() => {
+                indicator.style.display = 'none';
+            }, 2000);
+        });
+
+        // Display message
+        function displayMessage(message) {
+            const messagesDiv = document.getElementById('messages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${message.username === username ? 'own' : 'other'}`;
+            
+            const time = new Date(message.timestamp).toLocaleTimeString('en-US', { 
+                hour: '2-digit', 
+                minute: '2-digit' 
+            });
+            
+            messageDiv.innerHTML = `
+                <div class="message-header">
+                    <span class="message-username">${message.username}</span>
+                    ${message.isAdmin ? '<span class="admin-badge">ADMIN</span>' : ''}
+                    <span class="message-time">${time}</span>
+                </div>
+                <div class="message-text">${message.message}</div>
+            `;
+            
+            messagesDiv.appendChild(messageDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        // Send message
+        function sendMessage() {
+            const input = document.getElementById('messageInput');
+            const message = input.value.trim();
+            
+            if (message) {
+                if (isPrivateRoom) {
+                    socket.emit('private-message', { username, message });
+                } else {
+                    socket.emit('chat-message', { username, message });
+                }
+                input.value = '';
+            }
+        }
+
+        // Enter key to send
+        document.getElementById('messageInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+
+        // Typing indicator
+        let typingTimeout;
+        document.getElementById('messageInput').addEventListener('input', () => {
+            clearTimeout(typingTimeout);
+            socket.emit('typing', { username });
+            
+            typingTimeout = setTimeout(() => {
+                // Stop typing indicator after 2 seconds
+            }, 2000);
+        });
+
+        // Toggle private room
+        function togglePrivateRoom() {
+            isPrivateRoom = !isPrivateRoom;
+            const chatTitle = document.getElementById('chatTitle');
+            const messagesDiv = document.getElementById('messages');
+            
+            messagesDiv.innerHTML = '';
+            
+            if (isPrivateRoom) {
+                chatTitle.textContent = '🔒 Private Room (REZ67 & shmeckles67)';
+                chatTitle.style.color = '#fbbf24';
+                // Request private message history
+                socket.emit('get-private-messages');
+            } else {
+                chatTitle.textContent = '💬 Public Chat Room';
+                chatTitle.style.color = '';
+                // Request public message history
+                socket.emit('get-public-messages');
+            }
+        }
+
+        // Auto-logout prevention
+        let isNavigating = false;
+        document.querySelectorAll('a, button[type="submit"]').forEach(element => {
+            element.addEventListener('click', () => {
+                isNavigating = true;
+            });
+        });
+    </script>
+</body>
+</html>

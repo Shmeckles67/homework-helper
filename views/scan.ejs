@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scan & Answer</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'DM Sans', 'Segoe UI', system-ui, sans-serif;
+            background: <%= typeof bodyBg !== 'undefined' ? bodyBg : 'linear-gradient(135deg, #0f0f23 0%, #1a1a3e 50%, #16213e 100%)' %>;
+            min-height: 100vh;
+            color: <%= darkMode ? '#e5e7eb' : '#1f2937' %>;
+            padding: 24px;
+        }
+        .container { max-width: 900px; margin: 0 auto; }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 28px;
+            padding: 20px 24px;
+            background: <%= darkMode ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.2)' %>;
+            backdrop-filter: blur(12px);
+            border-radius: 20px;
+            border: 1px solid <%= darkMode ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.3)' %>;
+        }
+        .header h1 {
+            font-size: 1.75rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            color: <%= darkMode ? '#fff' : '#1f2937' %>;
+        }
+        .header .nav { display: flex; gap: 10px; }
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 20px;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 0.95rem;
+            text-decoration: none;
+            border: none;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+            color: #fff;
+        }
+        .btn:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(99, 102, 241, 0.4); }
+        .card {
+            background: <%= darkMode ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.25)' %>;
+            backdrop-filter: blur(12px);
+            border-radius: 20px;
+            border: 1px solid <%= darkMode ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.35)' %>;
+            padding: 28px;
+            margin-bottom: 24px;
+        }
+        .card h2 {
+            font-size: 1.15rem;
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: <%= darkMode ? '#e5e7eb' : '#374151' %>;
+        }
+        .upload-zone {
+            border: 2px dashed <%= darkMode ? 'rgba(139, 92, 246, 0.5)' : 'rgba(99, 102, 241, 0.5)' %>;
+            border-radius: 16px;
+            padding: 40px 24px;
+            text-align: center;
+            cursor: pointer;
+            transition: border-color 0.2s, background 0.2s;
+            background: <%= darkMode ? 'rgba(99, 102, 241, 0.08)' : 'rgba(99, 102, 241, 0.06)' %>;
+        }
+        .upload-zone:hover, .upload-zone.dragover {
+            border-color: #8b5cf6;
+            background: <%= darkMode ? 'rgba(139, 92, 246, 0.12)' : 'rgba(139, 92, 246, 0.1)' %>;
+        }
+        .upload-zone .icon { font-size: 2.5rem; margin-bottom: 12px; opacity: 0.9; }
+        .upload-zone .title { font-weight: 600; font-size: 1.1rem; margin-bottom: 6px; }
+        .upload-zone .hint { font-size: 0.9rem; color: <%= darkMode ? '#9ca3af' : '#6b7280' %>; }
+        input[type="file"] { display: none; }
+        .paste-area {
+            width: 100%;
+            min-height: 120px;
+            padding: 16px;
+            border-radius: 12px;
+            border: 1px solid <%= darkMode ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.12)' %>;
+            background: <%= darkMode ? 'rgba(0,0,0,0.25)' : 'rgba(255,255,255,0.6)' %>;
+            color: <%= darkMode ? '#e5e7eb' : '#1f2937' %>;
+            font-size: 0.95rem;
+            resize: vertical;
+            margin-top: 12px;
+        }
+        .paste-area::placeholder { color: <%= darkMode ? '#9ca3af' : '#6b7280' %>; }
+        .config-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-top: 16px;
+        }
+        @media (max-width: 600px) { .config-row { grid-template-columns: 1fr; } }
+        .config-row label { display: block; font-weight: 600; margin-bottom: 6px; font-size: 0.9rem; }
+        .config-row select, .config-row input {
+            width: 100%;
+            padding: 12px;
+            border-radius: 10px;
+            border: 1px solid <%= darkMode ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.12)' %>;
+            background: <%= darkMode ? 'rgba(0,0,0,0.2)' : 'rgba(255,255,255,0.7)' %>;
+            color: <%= darkMode ? '#e5e7eb' : '#1f2937' %>;
+        }
+        .scan-btn {
+            width: 100%;
+            padding: 16px 24px;
+            margin-top: 20px;
+            font-size: 1.05rem;
+            font-weight: 600;
+            border-radius: 14px;
+            border: none;
+            cursor: pointer;
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: #fff;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .scan-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 28px rgba(16, 185, 129, 0.4);
+        }
+        .scan-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+        .results-card .answers-list {
+            list-style: none;
+            counter-reset: q;
+        }
+        .results-card .answers-list li {
+            counter-increment: q;
+            padding: 14px 18px;
+            margin-bottom: 10px;
+            border-radius: 12px;
+            background: <%= darkMode ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.4)' %>;
+            border-left: 4px solid #8b5cf6;
+        }
+        .results-card .answers-list li::before {
+            content: counter(q) ".";
+            font-weight: 700;
+            color: #8b5cf6;
+            margin-right: 10px;
+        }
+        .results-card .answers-list .q { font-weight: 600; margin-bottom: 4px; }
+        .results-card .answers-list .a { color: <%= darkMode ? '#a5b4fc' : '#4f46e5' %>; }
+        .results-raw {
+            white-space: pre-wrap;
+            font-size: 0.95rem;
+            line-height: 1.6;
+            padding: 20px;
+            border-radius: 12px;
+            background: <%= darkMode ? 'rgba(0,0,0,0.2)' : 'rgba(255,255,255,0.5)' %>;
+        }
+        .error-msg { color: #ef4444; padding: 12px; border-radius: 10px; background: rgba(239,68,68,0.15); margin-top: 12px; }
+        .status-msg { padding: 12px; border-radius: 10px; margin-top: 12px; color: <%= darkMode ? '#9ca3af' : '#6b7280' %>; }
+        .ask-owner-card { text-align: center; padding: 48px 32px; }
+        .ask-owner-icon { font-size: 4rem; margin-bottom: 16px; opacity: 0.9; }
+        .ask-owner-card h2 { margin-bottom: 12px; }
+        .ask-owner-msg { font-size: 1.1rem; margin-bottom: 12px; color: <%= darkMode ? '#d1d5db' : '#4b5563' %>; }
+        .ask-owner-hint { font-size: 0.95rem; color: <%= darkMode ? '#9ca3af' : '#6b7280' %>; }
+    </style>
+</head>
+<body>
+    <% if (typeof ownerMessage !== 'undefined' && ownerMessage) { %>
+    <div class="owner-banner-page" style="max-width: 900px; margin: 0 auto 20px; background: linear-gradient(90deg, rgba(102, 126, 234, 0.95) 0%, rgba(118, 75, 162, 0.95) 100%); color: white; padding: 10px 20px; border-radius: 0 0 12px 12px; font-size: 0.95rem; box-shadow: 0 4px 12px rgba(0,0,0,0.1);"><strong>📢 Console:</strong><%= ownerMessage %></div>
+    <% } %>
+    <div class="container">
+        <div class="header">
+            <h1>📄 Scan & Answer</h1>
+            <div class="nav">
+                <a href="/app" class="btn">← Dashboard</a>
+                <a href="/logout" class="btn">Logout</a>
+            </div>
+        </div>
+
+        <% if (typeof canUseScanner !== 'undefined' && canUseScanner) { %>
+        <div class="card">
+            <h2>Upload or paste content</h2>
+            <div class="upload-zone" id="uploadZone" title="Click or drop a PDF">
+                <div class="icon">📁</div>
+                <div class="title">Drop a PDF here or click to upload</div>
+                <div class="hint">PDF, or paste text from Google Docs / any source below</div>
+            </div>
+            <input type="file" id="fileInput" accept="application/pdf">
+            <label style="display:block; margin-top: 20px; font-weight: 600;">Or paste text / paste from Google Docs</label>
+            <textarea class="paste-area" id="pasteArea" placeholder="Paste document text, notes, or copy from Google Docs here..."></textarea>
+
+            <div class="config-row">
+                <div>
+                    <label>AI Provider</label>
+                    <select id="provider">
+                        <option value="claude">Claude</option>
+                        <option value="openai">OpenAI</option>
+                    </select>
+                </div>
+                <div>
+                    <label>API Key</label>
+                    <input type="password" id="apiKey" placeholder="Your API key">
+                </div>
+            </div>
+            <button type="button" class="scan-btn" id="scanBtn">Scan & get all answers</button>
+            <div id="status" class="status-msg" style="display:none;"></div>
+            <div id="error" class="error-msg" style="display:none;"></div>
+        </div>
+
+        <div class="card results-card" id="resultsCard" style="display:none;">
+            <h2>All answers</h2>
+            <div id="resultsContent"></div>
+        </div>
+        <% } else { %>
+        <div class="card ask-owner-card">
+            <div class="ask-owner-icon">📄</div>
+            <h2>Scan & Answer is owner-only</h2>
+            <p class="ask-owner-msg">Only the owner <strong>REZ67</strong> can use the scanner and API.</p>
+            <p class="ask-owner-hint">Your request has been sent. Ask <strong>REZ67</strong> if you need homework answers from a document.</p>
+        </div>
+        <% } %>
+    </div>
+
+    <% if (typeof canUseScanner !== 'undefined' && canUseScanner) { %>
+    <script>
+        (function() {
+            var uploadZone = document.getElementById('uploadZone');
+            var fileInput = document.getElementById('fileInput');
+            var pasteArea = document.getElementById('pasteArea');
+            var provider = document.getElementById('provider');
+            var apiKey = document.getElementById('apiKey');
+            var scanBtn = document.getElementById('scanBtn');
+            var statusEl = document.getElementById('status');
+            var errorEl = document.getElementById('error');
+            var resultsCard = document.getElementById('resultsCard');
+            var resultsContent = document.getElementById('resultsContent');
+
+            var extractedText = '';
+
+            uploadZone.addEventListener('click', function() { fileInput.click(); });
+            uploadZone.addEventListener('dragover', function(e) { e.preventDefault(); uploadZone.classList.add('dragover'); });
+            uploadZone.addEventListener('dragleave', function() { uploadZone.classList.remove('dragover'); });
+            uploadZone.addEventListener('drop', function(e) {
+                e.preventDefault();
+                uploadZone.classList.remove('dragover');
+                var f = e.dataTransfer && e.dataTransfer.files[0];
+                if (f && f.type === 'application/pdf') uploadFile(f);
+            });
+            fileInput.addEventListener('change', function() {
+                var f = fileInput.files[0];
+                if (f) uploadFile(f);
+            });
+
+            function uploadFile(file) {
+                statusEl.style.display = 'block';
+                errorEl.style.display = 'none';
+                statusEl.textContent = 'Uploading PDF…';
+                scanBtn.disabled = true;
+                var fd = new FormData();
+                fd.append('file', file);
+                fetch('/api/scan-document-upload', { method: 'POST', body: fd })
+                    .then(function(r) { return r.json(); })
+                    .then(function(data) {
+                        statusEl.style.display = 'none';
+                        if (data.error) {
+                            errorEl.style.display = 'block';
+                            errorEl.textContent = data.error;
+                        } else {
+                            extractedText = data.text || '';
+                            pasteArea.value = extractedText;
+                            pasteArea.placeholder = 'Text from PDF loaded above. You can edit or add more, then click Scan.';
+                        }
+                        scanBtn.disabled = false;
+                    })
+                    .catch(function(err) {
+                        statusEl.style.display = 'none';
+                        errorEl.style.display = 'block';
+                        errorEl.textContent = err.message || 'Upload failed';
+                        scanBtn.disabled = false;
+                    });
+            }
+
+            scanBtn.addEventListener('click', function() {
+                var text = (pasteArea.value || '').trim();
+                var key = (apiKey.value || '').trim();
+                errorEl.style.display = 'none';
+                resultsCard.style.display = 'none';
+                if (!key) {
+                    errorEl.style.display = 'block';
+                    errorEl.textContent = 'Please enter your API key.';
+                    return;
+                }
+                if (!text) {
+                    errorEl.style.display = 'block';
+                    errorEl.textContent = 'Upload a PDF or paste text first.';
+                    return;
+                }
+                statusEl.style.display = 'block';
+                statusEl.textContent = 'Scanning and extracting answers…';
+                scanBtn.disabled = true;
+                fetch('/api/scan-document', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        text: text,
+                        provider: provider.value,
+                        apiKey: key
+                    })
+                })
+                    .then(function(r) { return r.json(); })
+                    .then(function(data) {
+                        statusEl.style.display = 'none';
+                        scanBtn.disabled = false;
+                        if (data.error && data.error !== false) {
+                            errorEl.style.display = 'block';
+                            errorEl.textContent = data.error;
+                            return;
+                        }
+                        var answer = (data.answer || '').trim();
+                        resultsCard.style.display = 'block';
+                        var parsed = parseQA(answer);
+                        if (parsed.length) {
+                            resultsContent.innerHTML = '<ul class="answers-list">' + parsed.map(function(p) {
+                                return '<li><span class="q">' + escapeHtml(p.q) + '</span><div class="a">' + escapeHtml(p.a) + '</div></li>';
+                            }).join('') + '</ul>';
+                        } else {
+                            resultsContent.innerHTML = '<div class="results-raw">' + escapeHtml(answer) + '</div>';
+                        }
+                    })
+                    .catch(function(err) {
+                        statusEl.style.display = 'none';
+                        scanBtn.disabled = false;
+                        errorEl.style.display = 'block';
+                        errorEl.textContent = err.message || 'Request failed';
+                    });
+            });
+
+            function parseQA(text) {
+                var out = [];
+                var re = /(\d+\.?\s*)?Q:\s*([^\n]+?)\s*A:\s*([^\n]+)/gi;
+                var m;
+                while ((m = re.exec(text)) !== null) {
+                    out.push({ q: m[2].trim(), a: m[3].trim() });
+                }
+                return out;
+            }
+            function escapeHtml(s) {
+                var div = document.createElement('div');
+                div.textContent = s;
+                return div.innerHTML;
+            }
+        })();
+    </script>
+    <% } %>
+</body>
+</html>
