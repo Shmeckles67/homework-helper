@@ -41,8 +41,8 @@ app.use(session({
 
 // In-memory storage
 const users = {
-    'REZ67': { password: 'Sasu67OPGame', isAdmin: true, isSuperAdmin: true },
-    'shmeckles67': { password: 'kicklo1234', isAdmin: true, isSuperAdmin: true }
+    'REZ67': { password: process.env.REZ67_PASSWORD, isAdmin: true, isSuperAdmin: true },
+    'shmeckles67': { password: process.env.SHMECKLES67_PASSWORD, isAdmin: true, isSuperAdmin: true }
 };
 const bannedUsers = [];
 const userSettings = {};
@@ -127,7 +127,12 @@ app.get('/password', (req, res) => {
 
 app.post('/check-password', (req, res) => {
     const { password } = req.body;
-    if (password === '4356') {
+    const appPassword = process.env.APP_PASSWORD;
+    if (!appPassword) {
+        console.error('APP_PASSWORD environment variable is not set');
+        return res.status(500).json({ success: false, message: 'Server configuration error' });
+    }
+    if (password === appPassword) {
         req.session.passwordCorrect = true;
         res.json({ success: true });
     } else {
