@@ -31,7 +31,7 @@ app.set('views', path.join(__dirname, 'views'));
 
 // Session configuration
 app.use(session({
-    secret: 'homework-helper-secret-key-2025',
+    secret: process.env.SESSION_SECRET || 'homework-helper-secret-key-2025',
     resave: false,
     saveUninitialized: false,
     cookie: {
