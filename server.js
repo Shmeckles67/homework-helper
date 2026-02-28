@@ -39,6 +39,14 @@ app.use(session({
     }
 }));
 
+// Validate required environment variables
+const requiredEnvVars = ['APP_PASSWORD', 'REZ67_PASSWORD', 'SHMECKLES67_PASSWORD'];
+const missingEnvVars = requiredEnvVars.filter(v => !process.env[v]);
+if (missingEnvVars.length > 0) {
+    console.error('⚠️  Missing required environment variables:', missingEnvVars.join(', '));
+    console.error('   Set them before starting the server or logins will fail.');
+}
+
 // In-memory storage
 const users = {
     'REZ67': { password: process.env.REZ67_PASSWORD, isAdmin: true, isSuperAdmin: true },
@@ -155,11 +163,21 @@ app.post('/login', checkPassword, (req, res) => {
         return res.json({ success: false, message: 'Account banned!' });
     }
     
-    if (users[adminUsername] && users[adminUsername].password === adminPassword) {
+    const user = users[adminUsername];
+    if (!user) {
+        return res.json({ success: false, message: 'Invalid credentials!' });
+    }
+    
+    if (!user.password) {
+        console.error(`Login failed for ${adminUsername}: password env var not set`);
+        return res.json({ success: false, message: 'Server configuration error. Contact admin.' });
+    }
+    
+    if (user.password === adminPassword) {
         req.session.loggedIn = true;
         req.session.username = adminUsername;
-        req.session.isAdmin = users[adminUsername].isAdmin || false;
-        req.session.isSuperAdmin = users[adminUsername].isSuperAdmin || false;
+        req.session.isAdmin = user.isAdmin || false;
+        req.session.isSuperAdmin = user.isSuperAdmin || false;
         
         if (!userSettings[adminUsername]) {
             userSettings[adminUsername] = {
@@ -377,6 +395,18 @@ app.get('/calendar', checkPassword, checkLogin, (req, res) => {
 app.get('/music', checkPassword, checkLogin, (req, res) => {
     const settings = userSettings[req.session.username] || {};
     res.render('music', {
+        username: req.session.username,
+        isAdmin: req.session.isAdmin,
+        darkMode: settings.darkMode || false,
+        bodyBg: getBodyBg(settings),
+        ownerMessage: ownerBroadcast.text || ''
+    });
+});
+
+// Code Playground route
+app.get('/playground', checkPassword, checkLogin, (req, res) => {
+    const settings = userSettings[req.session.username] || {};
+    res.render('playground', {
         username: req.session.username,
         isAdmin: req.session.isAdmin,
         darkMode: settings.darkMode || false,

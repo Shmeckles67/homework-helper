@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Code Playground</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: <%= bodyBg %>;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: <%= darkMode ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 255, 255, 0.2)' %>;
+            backdrop-filter: blur(10px);
+            padding: 20px 30px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .header h1 {
+            color: <%= darkMode ? '#e5e7eb' : '#1f2937' %>;
+            font-size: 1.8em;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            background: <%= darkMode ? 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)' : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' %>;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            text-decoration: none;
+            font-size: 0.95em;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-run {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        }
+
+        .btn-run:hover {
+            box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
+        }
+
+        .btn-clear {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+        }
+
+        .btn-clear:hover {
+            box-shadow: 0 6px 20px rgba(239, 68, 68, 0.4);
+        }
+
+        .btn-fullscreen {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+        }
+
+        .btn-fullscreen:hover {
+            box-shadow: 0 6px 20px rgba(245, 158, 11, 0.4);
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            height: calc(100vh - 160px);
+        }
+
+        .editor-panel, .preview-panel {
+            background: <%= darkMode ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 255, 255, 0.2)' %>;
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .panel-header {
+            background: <%= darkMode ? 'rgba(0, 0, 0, 0.3)' : 'rgba(0, 0, 0, 0.05)' %>;
+            padding: 12px 20px;
+            color: <%= darkMode ? '#e5e7eb' : '#1f2937' %>;
+            font-weight: 600;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .panel-body {
+            flex: 1;
+            overflow: hidden;
+            position: relative;
+        }
+
+        #codeEditor {
+            width: 100%;
+            height: 100%;
+            padding: 15px;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 14px;
+            line-height: 1.5;
+            border: none;
+            outline: none;
+            resize: none;
+            background: <%= darkMode ? '#1e1e2e' : '#fafafa' %>;
+            color: <%= darkMode ? '#cdd6f4' : '#1f2937' %>;
+        }
+
+        #codeEditor::placeholder {
+            color: <%= darkMode ? '#6c7086' : '#9ca3af' %>;
+        }
+
+        #previewFrame {
+            width: 100%;
+            height: 100%;
+            border: none;
+            background: white;
+        }
+
+        .templates {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .template-btn {
+            padding: 6px 12px;
+            background: <%= darkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)' %>;
+            color: <%= darkMode ? '#a5b4fc' : '#6366f1' %>;
+            border: 1px solid <%= darkMode ? 'rgba(165, 180, 252, 0.3)' : 'rgba(99, 102, 241, 0.3)' %>;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.8em;
+            transition: all 0.2s ease;
+        }
+
+        .template-btn:hover {
+            background: <%= darkMode ? 'rgba(165, 180, 252, 0.2)' : 'rgba(99, 102, 241, 0.1)' %>;
+        }
+
+        .fullscreen-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #000;
+            z-index: 9999;
+        }
+
+        .fullscreen-overlay.active {
+            display: block;
+        }
+
+        .fullscreen-overlay iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+        .fullscreen-close {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 10000;
+            padding: 10px 20px;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .fullscreen-close:hover {
+            background: rgba(0, 0, 0, 0.9);
+        }
+
+        @media (max-width: 900px) {
+            .main-content {
+                grid-template-columns: 1fr;
+                height: auto;
+            }
+
+            .editor-panel, .preview-panel {
+                height: 400px;
+            }
+
+            .header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎮 Code Playground</h1>
+            <div class="header-actions">
+                <button class="btn btn-run" onclick="runCode()">▶ Run Code</button>
+                <button class="btn btn-fullscreen" onclick="toggleFullscreen()">⛶ Fullscreen</button>
+                <button class="btn btn-clear" onclick="clearCode()">🗑 Clear</button>
+                <a href="/app" class="btn">← Back</a>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div class="editor-panel">
+                <div class="panel-header">
+                    <span>📝 Code Editor</span>
+                    <div class="templates">
+                        <button class="template-btn" onclick="loadTemplate('html')">HTML Template</button>
+                        <button class="template-btn" onclick="loadTemplate('canvas')">Canvas Game</button>
+                    </div>
+                </div>
+                <div class="panel-body">
+                    <textarea id="codeEditor" placeholder="Paste your HTML/CSS/JavaScript code here...
+
+Example: Copy the source code of a browser game and paste it here, then click 'Run Code' to play!
+
+Tips:
+• Right-click on a game page → View Page Source → Copy all
+• Works with HTML5 games, canvas games, and JavaScript games
+• Click 'Fullscreen' for the best gaming experience"></textarea>
+                </div>
+            </div>
+
+            <div class="preview-panel">
+                <div class="panel-header">
+                    <span>🖥 Preview</span>
+                    <span style="font-size: 0.85em; opacity: 0.7;">Press Run to see output</span>
+                </div>
+                <div class="panel-body">
+                    <iframe id="previewFrame" sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-modals allow-pointer-lock"></iframe>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="fullscreen-overlay" id="fullscreenOverlay">
+        <button class="fullscreen-close" onclick="toggleFullscreen()">✕ Exit Fullscreen (ESC)</button>
+        <iframe id="fullscreenFrame" sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-modals allow-pointer-lock"></iframe>
+    </div>
+
+    <script>
+        const codeEditor = document.getElementById('codeEditor');
+        const previewFrame = document.getElementById('previewFrame');
+        const fullscreenOverlay = document.getElementById('fullscreenOverlay');
+        const fullscreenFrame = document.getElementById('fullscreenFrame');
+
+        function runCode() {
+            const code = codeEditor.value;
+            if (!code.trim()) {
+                alert('Please paste some code first!');
+                return;
+            }
+
+            // Use srcdoc for better compatibility
+            previewFrame.srcdoc = code;
+            fullscreenFrame.srcdoc = code;
+        }
+
+        function clearCode() {
+            if (confirm('Clear all code?')) {
+                codeEditor.value = '';
+                previewFrame.srcdoc = '';
+                fullscreenFrame.srcdoc = '';
+                localStorage.removeItem('playgroundCode');
+            }
+        }
+
+        function toggleFullscreen() {
+            if (fullscreenOverlay.classList.contains('active')) {
+                fullscreenOverlay.classList.remove('active');
+                document.body.style.overflow = '';
+            } else {
+                if (!codeEditor.value.trim()) {
+                    alert('Run some code first!');
+                    return;
+                }
+                fullscreenOverlay.classList.add('active');
+                document.body.style.overflow = 'hidden';
+            }
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && fullscreenOverlay.classList.contains('active')) {
+                toggleFullscreen();
+            }
+            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                e.preventDefault();
+                runCode();
+            }
+        });
+
+        function loadTemplate(type) {
+            const templates = {
+                html: `<!DOCTYPE html>
+<html>
+<head>
+    <title>My Page</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .container {
+            text-align: center;
+            padding: 40px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+        }
+        h1 { margin-bottom: 20px; }
+        button {
+            padding: 15px 30px;
+            font-size: 18px;
+            border: none;
+            border-radius: 10px;
+            background: white;
+            color: #764ba2;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        button:hover { transform: scale(1.05); }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Hello World!</h1>
+        <p>Edit this code to create something awesome</p>
+        <button onclick="alert('You clicked the button!')">Click Me</button>
+    </div>
+</body>
+</html>`,
+                canvas: `<!DOCTYPE html>
+<html>
+<head>
+    <title>Canvas Game</title>
+    <style>
+        * { margin: 0; padding: 0; }
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: #1a1a2e;
+        }
+        canvas {
+            border: 3px solid #4facfe;
+            border-radius: 10px;
+        }
+        .score {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: white;
+            font-family: Arial;
+            font-size: 24px;
+        }
+    </style>
+</head>
+<body>
+    <div class="score">Score: <span id="score">0</span></div>
+    <canvas id="game" width="600" height="400"></canvas>
+    <script>
+        const canvas = document.getElementById('game');
+        const ctx = canvas.getContext('2d');
+        let score = 0;
+        
+        const player = { x: 300, y: 350, w: 50, h: 20, speed: 8 };
+        const ball = { x: 300, y: 200, r: 10, dx: 4, dy: -4 };
+        
+        const keys = {};
+        document.addEventListener('keydown', e => keys[e.key] = true);
+        document.addEventListener('keyup', e => keys[e.key] = false);
+        
+        function update() {
+            if (keys['ArrowLeft'] && player.x > 0) player.x -= player.speed;
+            if (keys['ArrowRight'] && player.x < canvas.width - player.w) player.x += player.speed;
+            
+            ball.x += ball.dx;
+            ball.y += ball.dy;
+            
+            if (ball.x < ball.r || ball.x > canvas.width - ball.r) ball.dx *= -1;
+            if (ball.y < ball.r) ball.dy *= -1;
+            
+            if (ball.y + ball.r > player.y && 
+                ball.x > player.x && 
+                ball.x < player.x + player.w) {
+                ball.dy *= -1;
+                score += 10;
+                document.getElementById('score').textContent = score;
+            }
+            
+            if (ball.y > canvas.height) {
+                ball.x = 300; ball.y = 200;
+                ball.dx = 4 * (Math.random() > 0.5 ? 1 : -1);
+                ball.dy = -4;
+                score = 0;
+                document.getElementById('score').textContent = score;
+            }
+        }
+        
+        function draw() {
+            ctx.fillStyle = '#1a1a2e';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            ctx.fillStyle = '#4facfe';
+            ctx.fillRect(player.x, player.y, player.w, player.h);
+            
+            ctx.beginPath();
+            ctx.arc(ball.x, ball.y, ball.r, 0, Math.PI * 2);
+            ctx.fillStyle = '#f5576c';
+            ctx.fill();
+        }
+        
+        function gameLoop() {
+            update();
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
+        
+        gameLoop();
+    <\/script>
+</body>
+</html>`
+            };
+
+            if (codeEditor.value.trim() && !confirm('Replace current code with template?')) {
+                return;
+            }
+            codeEditor.value = templates[type];
+            runCode();
+        }
+
+        const savedCode = localStorage.getItem('playgroundCode');
+        if (savedCode) {
+            codeEditor.value = savedCode;
+        }
+
+        codeEditor.addEventListener('input', () => {
+            localStorage.setItem('playgroundCode', codeEditor.value);
+        });
+    </script>
+</body>
+</html>
